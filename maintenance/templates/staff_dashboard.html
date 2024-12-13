@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Staff Dashboard</h1>
+
+<div class="dashboard-actions">
+    <a href="{% url 'staff_request_pool' %}">View Unassigned Requests</a>
+    <a href="{% url 'my_assigned_requests' %}">My Assigned Requests</a>
+</div>
+
+<h2>Quick Overview</h2>
+{% if assigned_requests %}
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in assigned_requests %}
+            <tr>
+                <td>{{ req.title }}</td>
+                <td>{{ req.get_status_display }}</td>
+                <td>{{ req.get_priority_display }}</td>
+                <td>{{ req.created_at|date:"M d, Y" }}</td>
+                <td>
+                    <a href="{% url 'view_maintenance_request' req.id %}">View Details</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No requests available. Check the request pool for new assignments.</p>
+{% endif %}
+{% endblock %}

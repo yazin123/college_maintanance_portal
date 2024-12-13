@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Update Maintenance Request</h1>
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label for="status">Update Status:</label>
+        <select name="status">
+            {% for status, display in request.STATUS_CHOICES %}
+            <option value="{{ status }}" {% if status == request.status %}selected{% endif %}>
+                {{ display }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="log_description">Log Description:</label>
+        <textarea name="log_description" rows="4" cols="50"></textarea>
+    </div>
+    <button type="submit">Update Request</button>
+</form>
+{% endblock %}

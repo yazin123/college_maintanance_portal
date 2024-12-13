@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Maintenance Request Pool</h1>
+
+{% if unassigned_requests %}
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Building</th>
+                <th>Priority</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in unassigned_requests %}
+            <tr>
+                <td>{{ req.title }}</td>
+                <td>{{ req.category.name }}</td>
+                <td>{{ req.building.name }}</td>
+                <td>{{ req.get_priority_display }}</td>
+                <td>{{ req.created_at|date:"M d, Y" }}</td>
+                <td>
+                    <a href="{% url 'view_maintenance_request' req.id %}">View</a>
+                    <a href="{% url 'assign_request' req.id %}">Assign to Me</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No unassigned requests available at the moment.</p>
+{% endif %}
+{% endblock %}
