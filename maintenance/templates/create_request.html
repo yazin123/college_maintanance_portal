@@ -1,22 +1,248 @@
 {% extends 'base.html' %}
 
+{% block title %}Create Maintenance Request - College Maintenance Portal{% endblock %}
+
 {% block content %}
-<h1>Create Maintenance Request</h1>
-<form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-    <div>
-        <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-        {{ field }}
-        {% if field.errors %}
-        <div class="errors">
-            {% for error in field.errors %}
-            <p>{{ error }}</p>
-            {% endfor %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Create Maintenance Request</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create Maintenance Request</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="{% url 'create_request' %}">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <h5 class="alert-heading">Please correct the following errors:</h5>
+                                <ul>
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li>{{ field.label }}: {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" name="{{ form.title.name }}" 
+                                   id="{{ form.title.id_for_label }}" 
+                                   class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                                   placeholder="Enter a descriptive title for your request"
+                                   required>
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Provide a clear, concise title (minimum 5 characters)</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.category.id_for_label }}" class="form-label">Category <span class="text-danger">*</span></label>
+                                <select name="{{ form.category.name }}" 
+                                        id="{{ form.category.id_for_label }}" 
+                                        class="form-select {% if form.category.errors %}is-invalid{% endif %}"
+                                        required>
+                                    <option value="" selected disabled>Select a category</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.category.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.category.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">Priority <span class="text-danger">*</span></label>
+                                <select name="{{ form.priority.name }}" 
+                                        id="{{ form.priority.id_for_label }}" 
+                                        class="form-select {% if form.priority.errors %}is-invalid{% endif %}"
+                                        required>
+                                    <option value="" selected disabled>Select priority level</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                                {% if form.priority.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.priority.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <span class="text-secondary"><i class="fas fa-circle me-1"></i>Low</span> - 
+                                    <span class="text-primary"><i class="fas fa-circle me-1"></i>Medium</span> - 
+                                    <span class="text-warning"><i class="fas fa-circle me-1"></i>High</span> - 
+                                    <span class="text-danger"><i class="fas fa-circle me-1"></i>Urgent</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.building.id_for_label }}" class="form-label">Building <span class="text-danger">*</span></label>
+                                <select name="{{ form.building.name }}" 
+                                        id="{{ form.building.id_for_label }}" 
+                                        class="form-select {% if form.building.errors %}is-invalid{% endif %}"
+                                        required>
+                                    <option value="" selected disabled>Select building</option>
+                                    {% for building in buildings %}
+                                        <option value="{{ building.id }}">{{ building.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.building.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.building.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.room_number.id_for_label }}" class="form-label">Room Number</label>
+                                <input type="text" name="{{ form.room_number.name }}" 
+                                       id="{{ form.room_number.id_for_label }}" 
+                                       class="form-control {% if form.room_number.errors %}is-invalid{% endif %}"
+                                       placeholder="e.g., 101, 2A, Lab-3">
+                                {% if form.room_number.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.room_number.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description <span class="text-danger">*</span></label>
+                            <textarea name="{{ form.description.name }}" 
+                                      id="{{ form.description.id_for_label }}" 
+                                      class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                                      rows="5"
+                                      placeholder="Provide detailed information about the maintenance issue"
+                                      required></textarea>
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Include specific details: what's not working, when it started, any visible signs, etc.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Request
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb text-warning me-2"></i>Tips for Effective Requests</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Be specific</strong> about the location and issue
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Mention if the issue is recurring</strong> or a first-time occurrence
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Include access information</strong> if needed
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Only mark as urgent</strong> if there's immediate danger or severe disruption
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
-    {% endfor %}
-    <button type="submit">Submit Request</button>
-</form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add form validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(event) {
+            let isValid = true;
+            
+            // Title validation
+            const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+            if (titleInput.value.length < 5) {
+                titleInput.classList.add('is-invalid');
+                titleInput.nextElementSibling.innerHTML = 'Title must be at least 5 characters long';
+                isValid = false;
+            } else {
+                titleInput.classList.remove('is-invalid');
+            }
+            
+            // Description validation
+            const descInput = document.getElementById('{{ form.description.id_for_label }}');
+            if (descInput.value.length < 10) {
+                descInput.classList.add('is-invalid');
+                descInput.nextElementSibling.innerHTML = 'Please provide a more detailed description';
+                isValid = false;
+            } else {
+                descInput.classList.remove('is-invalid');
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
 {% endblock %}

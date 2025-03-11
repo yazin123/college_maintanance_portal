@@ -1,17 +1,25 @@
 {% extends 'base.html' %}
 
-{% block title %}Register - College Maintenance Portal{% endblock %}
+{% block title %}{{ title }} - College Maintenance Portal{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'user_list' %}">User Management</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+                </ol>
+            </nav>
+            
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create an Account</h4>
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ title }}</h4>
                 </div>
-                <div class="card-body p-4">
-                    <form method="post" action="{% url 'register' %}">
+                <div class="card-body">
+                    <form method="post">
                         {% csrf_token %}
                         
                         {% if form.errors %}
@@ -176,9 +184,6 @@
                             </button>
                         </div>
                     </form>
-                </div>
-                <div class="card-footer bg-light text-center py-3">
-                    <p class="mb-0">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
                 </div>
             </div>
         </div>

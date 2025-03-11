@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load custom_template_tags %}
+
+{% block content %}
+<h1>Admin Dashboard</h1>
+
+<div class="dashboard-sections">
+    <section class="request-overview">
+        <h2>Maintenance Request Overview</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Number of Requests</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in request_stats %}
+                <tr>
+                    <td>{{ stat.status|title }}</td>
+                    <td>{{ stat.count }}</td>
+                    <td>{{ stat.count|multiply:100.0|divide:total_requests.count|floatformat:2 }}%</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td><strong>Total Requests</strong></td>
+                    <td><strong>{{ total_requests.count }}</strong></td>
+                    <td><strong>100%</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="recent-requests">
+        <h2>Recent Maintenance Requests</h2>
+        {% if recent_requests %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Requester</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in recent_requests %}
+                    <tr>
+                        <td>{{ req.title }}</td>
+                        <td>{{ req.requester.username }}</td>
+                        <td>{{ req.category.name }}</td>
+                        <td>{{ req.get_status_display }}</td>
+                        <td>{{ req.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'view_maintenance_request' req.id %}">View Details</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No recent maintenance requests.</p>
+        {% endif %}
+    </section>
+
+    <section class="admin-actions">
+        <h2>Administrative Actions</h2>
+        <div class="action-links">
+            <a href="{% url 'generate_report' %}">Generate Maintenance Report</a>
+            <a href="{% url 'admin:maintenance_customuser_changelist' %}">Manage Users</a>
+            <a href="{% url 'admin:maintenance_maintenancecategory_changelist' %}">Manage Categories</a>
+            <a href="{% url 'admin:maintenance_building_changelist' %}">Manage Buildings</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

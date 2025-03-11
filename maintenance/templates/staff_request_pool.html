@@ -1,37 +1,267 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<h1>Maintenance Request Pool</h1>
+{% block title %}Request Pool - College Maintenance Portal{% endblock %}
 
-{% if unassigned_requests %}
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Building</th>
-                <th>Priority</th>
-                <th>Created</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for req in unassigned_requests %}
-            <tr>
-                <td>{{ req.title }}</td>
-                <td>{{ req.category.name }}</td>
-                <td>{{ req.building.name }}</td>
-                <td>{{ req.get_priority_display }}</td>
-                <td>{{ req.created_at|date:"M d, Y" }}</td>
-                <td>
-                    <a href="{% url 'view_maintenance_request' req.id %}">View</a>
-                    <a href="{% url 'assign_request' req.id %}">Assign to Me</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>No unassigned requests available at the moment.</p>
-{% endif %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Request Pool</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-inbox me-2"></i>Maintenance Request Pool</h4>
+                        <span class="badge bg-light text-dark">{{ unassigned_requests|length }} Unassigned Requests</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle fa-2x me-3"></i>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading">Request Pool Information</h5>
+                                <p class="mb-0">This pool shows all unassigned maintenance requests. Click "Assign to Me" to take responsibility for a request.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter and Search Controls -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                                <select class="form-select" id="categoryFilter">
+                                    <option value="">All Categories</option>
+                                    <!-- These would be populated from the backend -->
+                                    <option value="plumbing">Plumbing</option>
+                                    <option value="electrical">Electrical</option>
+                                    <option value="hvac">HVAC</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-sort"></i></span>
+                                <select class="form-select" id="priorityFilter">
+                                    <option value="">All Priorities</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search requests..." id="searchInput">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if unassigned_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="requestPoolTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Requester</th>
+                                        <th>Location</th>
+                                        <th>Category</th>
+                                        <th>Created</th>
+                                        <th>Priority</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in unassigned_requests %}
+                                        <tr class="priority-{{ request.priority }}">
+                                            <td>#{{ request.id }}</td>
+                                            <td>{{ request.title }}</td>
+                                            <td>{{ request.requester.username }}</td>
+                                            <td>{{ request.building.name }} {{ request.room_number }}</td>
+                                            <td>{{ request.category.name }}</td>
+                                            <td>{{ request.created_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if request.priority == 'low' %}secondary{% elif request.priority == 'medium' %}primary{% elif request.priority == 'high' %}warning{% else %}danger{% endif %} rounded-pill">
+                                                    {{ request.get_priority_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{% url 'view_maintenance_request' request.id %}" class="btn btn-outline-primary" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{% url 'assign_request' request.id %}" class="btn btn-success" title="Assign to Me">
+                                                        <i class="fas fa-hand-pointer"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if unassigned_requests.has_other_pages %}
+                            <nav aria-label="Page navigation" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if unassigned_requests.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ unassigned_requests.previous_page_number }}" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for i in unassigned_requests.paginator.page_range %}
+                                        {% if unassigned_requests.number == i %}
+                                            <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                        {% else %}
+                                            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if unassigned_requests.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ unassigned_requests.next_page_number }}" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                            <h5>All caught up!</h5>
+                            <p class="text-muted">There are no unassigned maintenance requests at the moment.</p>
+                            <a href="{% url 'home' %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-home me-2"></i>Return to Dashboard
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Staff Efficiency Tips -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb text-warning me-2"></i>Efficiency Tips</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-danger me-3 fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h6>Prioritize Urgent Issues</h6>
+                                    <p class="small mb-0">Address urgent and high-priority requests first to minimize disruption.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-map-marked-alt text-primary me-3 fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h6>Group by Location</h6>
+                                    <p class="small mb-0">Assign yourself multiple requests in the same building to save travel time.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-clipboard-check text-success me-3 fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h6>Regular Updates</h6>
+                                    <p class="small mb-0">Provide clear and frequent updates to keep requesters informed.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter and search functionality
+        const categoryFilter = document.getElementById('categoryFilter');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('requestPoolTable');
+        
+        if (!table) return; // Exit if no table exists
+        
+        const filterTable = () => {
+            const rows = table.querySelectorAll('tbody tr');
+            const categoryValue = categoryFilter.value.toLowerCase();
+            const priorityValue = priorityFilter.value.toLowerCase();
+            const searchValue = searchInput.value.toLowerCase();
+            
+            rows.forEach(row => {
+                const categoryMatch = !categoryValue || row.cells[4].textContent.toLowerCase().includes(categoryValue);
+                const priorityMatch = !priorityValue || row.cells[6].textContent.toLowerCase().includes(priorityValue);
+                const searchMatch = !searchValue || Array.from(row.cells).some(cell => 
+                    cell.textContent.toLowerCase().includes(searchValue)
+                );
+                
+                if (categoryMatch && priorityMatch && searchMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        };
+        
+        // Add event listeners
+        if (categoryFilter) categoryFilter.addEventListener('change', filterTable);
+        if (priorityFilter) priorityFilter.addEventListener('change', filterTable);
+        if (searchInput) searchInput.addEventListener('input', filterTable);
+        
+        // Highlight priority rows
+        const priorityRows = document.querySelectorAll('.priority-urgent, .priority-high');
+        priorityRows.forEach(row => {
+            row.classList.add('table-warning');
+        });
+    });
+</script>
 {% endblock %}

@@ -6,7 +6,7 @@ from .models import (
     MaintenanceReport,
     MaintenanceCategory,
     MaintenanceLog,
-    Building
+    Building,InventoryItem
 )
 class UserRegistrationForm(UserCreationForm):
     """
@@ -82,3 +82,59 @@ class MaintenanceReportForm(forms.Form):
     end_date = forms.DateField(
         widget=forms.DateInput(attrs={'type': 'date'})
     )
+
+
+class InventoryItemForm(forms.ModelForm):
+    class Meta:
+        model = InventoryItem
+        fields = ['name', 'description', 'quantity']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+# Add these to your forms.py file
+
+from django import forms
+from django.contrib.auth.forms import UserCreationForm as DjangoUserCreationForm
+from django.contrib.auth.forms import PasswordResetForm
+from .models import CustomUser
+
+class UserCreationForm(forms.ModelForm):
+    """
+    Form for admin to create a new user
+    """
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput)
+    
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'user_type', 'department', 'contact_number']
+        widgets = {
+            'user_type': forms.Select(attrs={'class': 'form-control'}),
+        }
+    
+    def clean_password2(self):
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords don't match")
+        return password2
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password1'])
+        if commit:
+            user.save()
+        return user
+
+class UserEditForm(forms.ModelForm):
+    """
+    Form for admin to edit an existing user
+    """
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'user_type', 'department', 'contact_number', 'is_active']
+        widgets = {
+            'user_type': forms.Select(attrs={'class': 'form-control'}),
+        }

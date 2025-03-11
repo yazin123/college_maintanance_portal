@@ -1,91 +1,101 @@
 {% extends 'base.html' %}
 
+{% block title %}College Maintenance Portal - Home{% endblock %}
+
 {% block content %}
-    {% if not user.is_authenticated %}
-        <h1>Welcome to College Maintenance Portal</h1>
-        <p>Please login or register to access the system.</p>
-    {% else %}
-        {% if user.user_type == 'student' %}
-            <h1>Student Dashboard</h1>
-            <h2>Your Maintenance Requests</h2>
-            {% if requests %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Category</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for req in requests %}
-                        <tr>
-                            <td>{{ req.title }}</td>
-                            <td>{{ req.category.name }}</td>
-                            <td>{{ req.get_status_display }}</td>
-                            <td>{{ req.get_priority_display }}</td>
-                            <td>
-                                <a href="{% url 'view_maintenance_request' req.id %}">View Details</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p>No maintenance requests yet.</p>
-            {% endif %}
-        {% elif user.user_type == 'staff' %}
-            <h1>Staff Dashboard</h1>
-            <h2>Assigned Maintenance Requests</h2>
-            {% if assigned_requests %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Requester</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for req in assigned_requests %}
-                        <tr>
-                            <td>{{ req.title }}</td>
-                            <td>{{ req.requester.username }}</td>
-                            <td>{{ req.get_status_display }}</td>
-                            <td>{{ req.get_priority_display }}</td>
-                            <td>
-                                <a href="{% url 'update_request' req.id %}">Update Request</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p>No assigned maintenance requests.</p>
-            {% endif %}
-        {% elif user.user_type == 'admin' %}
-            <h1>Admin Dashboard</h1>
-            <h2>Maintenance Request Overview</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Status</th>
-                        <th>Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in request_stats %}
-                    <tr>
-                        <td>{{ stat.status }}</td>
-                        <td>{{ stat.count }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
-    {% endif %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card mb-4">
+                <div class="card-body text-center p-5">
+                    <h1 class="display-4 mb-4">
+                        <i class="fas fa-tools text-primary me-2"></i>
+                        College Maintenance Portal
+                    </h1>
+                    <p class="lead">
+                        A centralized system for reporting and managing maintenance issues across the campus.
+                    </p>
+                    <hr class="my-4">
+                    <p>
+                        Login to submit maintenance requests, track their status, or view assigned tasks.
+                    </p>
+                    <div class="mt-4">
+                        <a href="{% url 'login' %}" class="btn btn-primary btn-lg me-2">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                     
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-graduate fa-3x text-primary mb-3"></i>
+                            <h4 class="card-title">Students</h4>
+                            <p class="card-text">Submit maintenance requests for your dorm room or campus facilities.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-hard-hat fa-3x text-primary mb-3"></i>
+                            <h4 class="card-title">Maintenance Staff</h4>
+                            <p class="card-text">Manage and update the status of assigned maintenance tasks.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-tie fa-3x text-primary mb-3"></i>
+                            <h4 class="card-title">Administrators</h4>
+                            <p class="card-text">Oversee maintenance operations and generate performance reports.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                            </div>
+                            <h5>Submit Request</h5>
+                            <p class="small">Report your maintenance issue with details</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="fas fa-user-check fa-2x text-primary"></i>
+                            </div>
+                            <h5>Staff Assignment</h5>
+                            <p class="small">Request is assigned to maintenance staff</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="fas fa-wrench fa-2x text-primary"></i>
+                            </div>
+                            <h5>Work Completion</h5>
+                            <p class="small">Maintenance work is performed</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="fas fa-check-circle fa-2x text-primary"></i>
+                            </div>
+                            <h5>Confirmation</h5>
+                            <p class="small">Request is marked as completed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Maintenance Categories - College Maintenance Portal{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-list text-primary me-2"></i>Maintenance Categories</h1>
+                <a href="{% url 'add_category' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Category
+                </a>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    {% if categories %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Requests Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                        <tr>
+                                            <td>{{ category.name }}</td>
+                                            <td>{{ category.description|truncatechars:100 }}</td>
+                                            <td>{{ category.maintenancerequest_set.count }}</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="#" class="btn btn-outline-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-list fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">No categories found</h5>
+                            <p>There are no maintenance categories in the database.</p>
+                            <a href="{% url 'add_category' %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-2"></i>Add First Category
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Student Dashboard</h1>
+
+<div class="dashboard-actions">
+    <a href="{% url 'create_request' %}" class="btn">Create New Maintenance Request</a>
+</div>
+
+<h2>My Maintenance Requests</h2>
+{% if requests %}
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Building</th>
+                <th>Room Number</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Created Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requests %}
+            <tr>
+                <td>{{ req.title }}</td>
+                <td>{{ req.category.name }}</td>
+                <td>{{ req.building.name }}</td>
+                <td>{{ req.room_number }}</td>
+                <td>{{ req.get_status_display }}</td>
+                <td>{{ req.get_priority_display }}</td>
+                <td>{{ req.created_at|date:"M d, Y" }}</td>
+                <td>
+                    <a href="{% url 'view_maintenance_request' req.id %}">View Details</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>You have not submitted any maintenance requests yet.</p>
+{% endif %}
+{% endblock %}

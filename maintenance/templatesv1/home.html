@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% if not user.is_authenticated %}
+        <h1>Welcome to College Maintenance Portal</h1>
+        <p>Please login or register to access the system.</p>
+    {% else %}
+        {% if user.user_type == 'student' %}
+            <h1>Student Dashboard</h1>
+            <h2>Your Maintenance Requests</h2>
+            {% if requests %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td>{{ req.title }}</td>
+                            <td>{{ req.category.name }}</td>
+                            <td>{{ req.get_status_display }}</td>
+                            <td>{{ req.get_priority_display }}</td>
+                            <td>
+                                <a href="{% url 'view_maintenance_request' req.id %}">View Details</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No maintenance requests yet.</p>
+            {% endif %}
+        {% elif user.user_type == 'staff' %}
+            <h1>Staff Dashboard</h1>
+            <h2>Assigned Maintenance Requests</h2>
+            {% if assigned_requests %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Requester</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in assigned_requests %}
+                        <tr>
+                            <td>{{ req.title }}</td>
+                            <td>{{ req.requester.username }}</td>
+                            <td>{{ req.get_status_display }}</td>
+                            <td>{{ req.get_priority_display }}</td>
+                            <td>
+                                <a href="{% url 'update_request' req.id %}">Update Request</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No assigned maintenance requests.</p>
+            {% endif %}
+        {% elif user.user_type == 'admin' %}
+            <h1>Admin Dashboard</h1>
+            <h2>Maintenance Request Overview</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in request_stats %}
+                    <tr>
+                        <td>{{ stat.status }}</td>
+                        <td>{{ stat.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    {% endif %}
+{% endblock %}

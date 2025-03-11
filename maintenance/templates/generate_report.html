@@ -1,22 +1,558 @@
 {% extends 'base.html' %}
 
+{% block title %}Generate Maintenance Report - College Maintenance Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-preview {
+        border: 1px dashed #ccc;
+        padding: 1.5rem;
+        background-color: #f9f9f9;
+        border-radius: 0.5rem;
+    }
+    
+    .date-range-pill {
+        background-color: #e9ecef;
+        border-radius: 50rem;
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+    
+    .metric-card {
+        transition: transform 0.2s;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Generate Maintenance Report</h1>
-<form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-    <div>
-        <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-        {{ field }}
-        {% if field.errors %}
-        <div class="errors">
-            {% for error in field.errors %}
-            <p>{{ error }}</p>
-            {% endfor %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Generate Report</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-4"><i class="fas fa-chart-line text-primary me-2"></i>Maintenance Performance Report</h1>
         </div>
-        {% endif %}
     </div>
-    {% endfor %}
-    <button type="submit">Generate Report</button>
-</form>
+    
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Report Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'generate_report' %}" id="reportForm">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <h5 class="alert-heading">Please correct the following errors:</h5>
+                                <ul>
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li>{{ field.label }}: {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                <input type="date" name="{{ form.start_date.name }}" 
+                                       id="{{ form.start_date.id_for_label }}" 
+                                       class="form-control {% if form.start_date.errors %}is-invalid{% endif %}" 
+                                       required>
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.start_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                <input type="date" name="{{ form.end_date.name }}" 
+                                       id="{{ form.end_date.id_for_label }}" 
+                                       class="form-control {% if form.end_date.errors %}is-invalid{% endif %}" 
+                                       required>
+                                {% if form.end_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.end_date.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Report Type</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="report_type" id="summaryReport" value="summary" checked>
+                                <label class="form-check-label" for="summaryReport">
+                                    <i class="fas fa-file-alt me-2"></i>Summary Report
+                                </label>
+                                <div class="form-text">Basic performance metrics and statistics</div>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="report_type" id="detailedReport" value="detailed">
+                                <label class="form-check-label" for="detailedReport">
+                                    <i class="fas fa-file-invoice me-2"></i>Detailed Report
+                                </label>
+                                <div class="form-text">Comprehensive breakdown with all requests</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Include Metrics</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="include_categories" id="includeCategories" checked>
+                                <label class="form-check-label" for="includeCategories">
+                                    Category Analysis
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="include_staff" id="includeStaff" checked>
+                                <label class="form-check-label" for="includeStaff">
+                                    Staff Performance
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="include_buildings" id="includeBuildings" checked>
+                                <label class="form-check-label" for="includeBuildings">
+                                    Building Breakdown
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="include_charts" id="includeCharts" checked>
+                                <label class="form-check-label" for="includeCharts">
+                                    Visual Charts
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Output Format</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="output_format" id="pdfFormat" value="pdf" checked>
+                                <label class="form-check-label" for="pdfFormat">
+                                    <i class="fas fa-file-pdf me-2 text-danger"></i>PDF Document
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="output_format" id="excelFormat" value="excel">
+                                <label class="form-check-label" for="excelFormat">
+                                    <i class="fas fa-file-excel me-2 text-success"></i>Excel Spreadsheet
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="output_format" id="htmlFormat" value="html">
+                                <label class="form-check-label" for="htmlFormat">
+                                    <i class="fas fa-file-code me-2 text-primary"></i>HTML (Web View)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-cogs me-2"></i>Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Reports</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Monthly Performance Report</h6>
+                                <small>Mar 1-31, 2025</small>
+                            </div>
+                            <p class="mb-1 small">Generated by admin on April 2, 2025</p>
+                            <small class="text-muted"><i class="fas fa-file-pdf me-1 text-danger"></i>PDF Document</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Staff Performance Analysis</h6>
+                                <small>Feb 1-28, 2025</small>
+                            </div>
+                            <p class="mb-1 small">Generated by admin on March 5, 2025</p>
+                            <small class="text-muted"><i class="fas fa-file-excel me-1 text-success"></i>Excel Spreadsheet</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Building A Detailed Report</h6>
+                                <small>Jan 15-Feb 15, 2025</small>
+                            </div>
+                            <p class="mb-1 small">Generated by admin on February 20, 2025</p>
+                            <small class="text-muted"><i class="fas fa-file-pdf me-1 text-danger"></i>PDF Document</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Report Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-preview">
+                        <div class="text-center mb-4">
+                            <h4 class="mb-1">Maintenance Performance Report</h4>
+                            <div class="date-range-pill">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                <span id="previewDateRange">March 1, 2025 - March 10, 2025</span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card border-0 metric-card text-center">
+                                    <div class="card-body">
+                                        <div class="stat-value text-primary" id="previewTotalRequests">148</div>
+                                        <div class="stat-label">Total Requests</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-0 metric-card text-center">
+                                    <div class="card-body">
+                                        <div class="stat-value text-success" id="previewCompletedRequests">112</div>
+                                        <div class="stat-label">Completed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-0 metric-card text-center">
+                                    <div class="card-body">
+                                        <div class="stat-value text-warning" id="previewAvgResolutionTime">36</div>
+                                        <div class="stat-label">Avg. Hours</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-0 metric-card text-center">
+                                    <div class="card-body">
+                                        <div class="stat-value text-info" id="previewSatisfactionRate">92<small>%</small></div>
+                                        <div class="stat-label">Satisfaction</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mt-4 mb-3">Categories Breakdown</h5>
+                        <div style="height: 250px;" class="mb-4" id="categoryChart"></div>
+                        
+                        <h5 class="mt-4 mb-3">Resolution Time Trend</h5>
+                        <div style="height: 250px;" class="mb-4" id="resolutionChart"></div>
+                        
+                        <div class="text-center text-muted mt-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            This is a preview. Generate the report to see actual data.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Report Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-file-alt me-2 text-primary"></i>Summary Reports</h6>
+                            <p class="small mb-3">
+                                Summary reports provide key performance metrics, including total requests, completion rates, 
+                                average resolution times, and category breakdowns. Ideal for quick overviews and presentations.
+                            </p>
+                            
+                            <h6><i class="fas fa-file-invoice me-2 text-primary"></i>Detailed Reports</h6>
+                            <p class="small mb-0">
+                                Detailed reports include everything in a summary report plus a complete list of all maintenance 
+                                requests, staff assignments, and comprehensive statistics. Best for in-depth analysis.
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-chart-bar me-2 text-primary"></i>Metrics Explained</h6>
+                            <ul class="small">
+                                <li><strong>Average Resolution Time:</strong> The average time from request creation to completion.</li>
+                                <li><strong>First Response Time:</strong> The average time before a staff member is assigned.</li>
+                                <li><strong>Completion Rate:</strong> The percentage of requests completed within the date range.</li>
+                                <li><strong>Category Analysis:</strong> Breakdown of requests by maintenance category.</li>
+                                <li><strong>Location Analysis:</strong> Distribution of requests across campus buildings.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Date range preview update
+        const startDateInput = document.getElementById('{{ form.start_date.id_for_label }}');
+        const endDateInput = document.getElementById('{{ form.end_date.id_for_label }}');
+        const dateRangePreview = document.getElementById('previewDateRange');
+        
+        function updateDateRange() {
+            if (startDateInput.value && endDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                
+                // Format dates
+                const startFormatted = startDate.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                
+                const endFormatted = endDate.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                
+                dateRangePreview.textContent = `${startFormatted} - ${endFormatted}`;
+                
+                // Update stats based on date range
+                updatePreviewStats(startDate, endDate);
+            }
+        }
+        
+        if (startDateInput && endDateInput && dateRangePreview) {
+            startDateInput.addEventListener('change', updateDateRange);
+            endDateInput.addEventListener('change', updateDateRange);
+        }
+        
+        // Function to update preview stats (simulated data)
+        function updatePreviewStats(startDate, endDate) {
+            // Calculate days between dates
+            const days = Math.floor((endDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
+            
+            // Simple simulation for preview numbers
+            const totalRequests = Math.floor(days * 12 + Math.random() * 20);
+            const completedRequests = Math.floor(totalRequests * (0.70 + Math.random() * 0.15));
+            const avgResolutionTime = Math.floor(24 + Math.random() * 24);
+            const satisfactionRate = Math.floor(85 + Math.random() * 10);
+            
+            // Update DOM
+            document.getElementById('previewTotalRequests').textContent = totalRequests;
+            document.getElementById('previewCompletedRequests').textContent = completedRequests;
+            document.getElementById('previewAvgResolutionTime').textContent = avgResolutionTime;
+            document.getElementById('previewSatisfactionRate').textContent = `${satisfactionRate}<small>%</small>`;
+            
+            // Update charts
+            updateCategoryChart(totalRequests);
+            updateResolutionChart(days);
+        }
+        
+        // Initialize Category Chart
+        const categoryChartEl = document.getElementById('categoryChart');
+        let categoryChart;
+        
+        function initCategoryChart() {
+            if (categoryChartEl) {
+                categoryChart = new Chart(categoryChartEl, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Plumbing', 'Electrical', 'HVAC', 'Structural', 'Others'],
+                        datasets: [{
+                            label: 'Requests by Category',
+                            data: [35, 42, 22, 15, 34],
+                            backgroundColor: [
+                                '#4e73df',
+                                '#1cc88a',
+                                '#36b9cc',
+                                '#f6c23e',
+                                '#858796'
+                            ],
+                            borderColor: 'rgba(255, 255, 255, 0.8)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Update category chart with simulated data
+        function updateCategoryChart(total) {
+            if (!categoryChart) {
+                initCategoryChart();
+                return;
+            }
+            
+            // Distribute simulated data across categories
+            const plumbing = Math.floor(total * (0.15 + Math.random() * 0.1));
+            const electrical = Math.floor(total * (0.2 + Math.random() * 0.1));
+            const hvac = Math.floor(total * (0.1 + Math.random() * 0.1));
+            const structural = Math.floor(total * (0.05 + Math.random() * 0.1));
+            const others = total - plumbing - electrical - hvac - structural;
+            
+            categoryChart.data.datasets[0].data = [plumbing, electrical, hvac, structural, others];
+            categoryChart.update();
+        }
+        
+        // Initialize Resolution Time Chart
+        const resolutionChartEl = document.getElementById('resolutionChart');
+        let resolutionChart;
+        
+        function initResolutionChart() {
+            if (resolutionChartEl) {
+                resolutionChart = new Chart(resolutionChartEl, {
+                    type: 'line',
+                    data: {
+                        labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                        datasets: [{
+                            label: 'Avg. Resolution Hours',
+                            data: [48, 45, 39, 34, 36, 32, 30],
+                            fill: false,
+                            borderColor: '#4e73df',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Hours'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Update resolution chart with simulated data
+        function updateResolutionChart(days) {
+            if (!resolutionChart) {
+                initResolutionChart();
+                return;
+            }
+            
+            // Generate simulated daily labels
+            const labels = [];
+            const data = [];
+            const maxDays = Math.min(days, 14); // Cap at 14 days for readability
+            
+            let baseline = 48; // Start with 48 hours average resolution time
+            
+            for (let i = 0; i < maxDays; i++) {
+                // For preview, we'll show a general improving trend
+                baseline = Math.max(24, baseline - (Math.random() * 3 - 1));
+                
+                // Format day label
+                if (i === 0) {
+                    labels.push('Day 1');
+                } else {
+                    labels.push(`Day ${i+1}`);
+                }
+                
+                data.push(Math.round(baseline));
+            }
+            
+            resolutionChart.data.labels = labels;
+            resolutionChart.data.datasets[0].data = data;
+            resolutionChart.update();
+        }
+        
+        // Initialize preview charts
+        initCategoryChart();
+        initResolutionChart();
+        
+        // Form validation
+        const reportForm = document.getElementById('reportForm');
+        if (reportForm) {
+            reportForm.addEventListener('submit', function(event) {
+                if (startDateInput.value && endDateInput.value) {
+                    const startDate = new Date(startDateInput.value);
+                    const endDate = new Date(endDateInput.value);
+                    
+                    if (endDate < startDate) {
+                        alert('End date must be after start date');
+                        event.preventDefault();
+                    }
+                }
+            });
+        }
+        
+        // Set default date values if empty
+        if (startDateInput && !startDateInput.value) {
+            const today = new Date();
+            const lastMonth = new Date();
+            lastMonth.setMonth(today.getMonth() - 1);
+            
+            startDateInput.valueAsDate = lastMonth;
+        }
+        
+        if (endDateInput && !endDateInput.value) {
+            const today = new Date();
+            endDateInput.valueAsDate = today;
+        }
+        
+        // Trigger initial update
+        if (startDateInput && endDateInput) {
+            updateDateRange();
+        }
+    });
+</script>
 {% endblock %}

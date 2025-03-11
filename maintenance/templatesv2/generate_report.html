@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Maintenance Report - College Maintenance Portal</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Flatpickr for date picking -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+        }
+        
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: #212529;
+            color: white;
+        }
+        
+        .sidebar-link {
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-link:hover, .sidebar-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-icon {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .report-header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .report-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .report-type-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            height: 100%;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .report-type-card:hover, .report-type-card.selected {
+            border-color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        
+        .report-type-card.selected {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .report-icon {
+            font-size: 2rem;
+            color: #0d6efd;
+            margin-bottom: 15px;
+        }
+        
+        .report-preview {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        .btn-generate {
+            background: linear-gradient(to right, #0d6efd, #0b5ed7);
+            border: none;
+        }
+        
+        .flatpickr-input {
+            background-color: #fff !important;
+        }
+        
+        .sample-chart {
+            width: 100%;
+            height: 200px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+        }
+        
+        .date-range-error {
+            display: none;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-tools me-2"></i>
+                College Maintenance Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> {{ request.user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2 col-md-3 px-0 d-flex flex-column sidebar">
+                <div class="py-4 px-3 mb-3 border-bottom border-secondary">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-shield fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="mb-0">Admin Dashboard</h5>
+                            <small class="text-muted">{{ request.user.department }}</small>
+                        </div>
+                    </div>
+                </div>
+                <a href="{% url 'home' %}" class="sidebar-link">
+                    <span class="sidebar-icon"><i class="fas fa-tachometer-alt"></i></span>
+                    Dashboard
+                </a>
+                <a href="#" class="sidebar-link">
+                    <span class="sidebar-icon"><i class="fas fa-clipboard-list"></i></span>
+                    All Requests
+                </a>
+                <a href="#" class="sidebar-link">
+                    <span class="sidebar-icon"><i class="fas fa-users"></i></span>
+                    Users
+                </a>
+                <a href="#" class="sidebar-link">
+                    <span class="sidebar-icon"><i class="fas fa-building"></i></span>
+                    Buildings
+                </a>
+                <a href="#" class="sidebar-link">
+                    <span class="sidebar-icon"><i class="fas fa-tags"></i></span>
+                    Categories
+                </a>
+                <a href="{% url 'inventory' %}" class="sidebar-link">
+                    <span class="sidebar-icon"><i class="fas fa-box-open"></i></span>
+                    Inventory
+                </a>
+                <a href="{% url 'generate_report' %}" class="sidebar-link active">
+                    <span class="sidebar-icon"><i class="fas fa-chart-bar"></i></span>
+                    Reports
+                </a>
+                <div class="mt-auto p-3 border-top border-secondary">
+                    <div class="d-grid">
+                        <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-10 col-md-9 main-content">
+                <!-- Messages/Alerts -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Report Header -->
+                <div class="report-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-0">Generate Maintenance Report</h2>
+                            <p class="text-muted mb-0">Create detailed maintenance performance reports</p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <a href="#" class="btn btn-outline-primary">
+                                <i class="fas fa-history me-2"></i> View Previous Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Form -->
+                <div class="card report-card mb-4">
+                    <div class="card-body p-4">
+                        <form method="POST" action="{% url 'generate_report' %}" id="reportForm">
+                            {% csrf_token %}
+                            
+                            <!-- Report Type Selection -->
+                            <h5 class="mb-3">1. Select Report Type</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <div class="report-type-card selected" data-report-type="performance">
+                                        <div class="text-center">
+                                            <i class="fas fa-chart-line report-icon"></i>
+                                            <h5>Performance Report</h5>
+                                            <p class="text-muted mb-0">Response times, resolution rates, and efficiency metrics</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <div class="report-type-card" data-report-type="category">
+                                        <div class="text-center">
+                                            <i class="fas fa-tags report-icon"></i>
+                                            <h5>Category Analysis</h5>
+                                            <p class="text-muted mb-0">Breakdown of requests by category and location</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="report-type-card" data-report-type="staff">
+                                        <div class="text-center">
+                                            <i class="fas fa-users report-icon"></i>
+                                            <h5>Staff Workload</h5>
+                                            <p class="text-muted mb-0">Assignment distribution and staff productivity</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="report_type" id="reportType" value="performance">
+                            </div>
+                            
+                            <!-- Date Range Selection -->
+                            <h5 class="mb-3">2. Select Date Range</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-5 mb-3 mb-md-0">
+                                    <label for="start_date" class="form-label">Start Date</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                        <input type="text" class="form-control date-picker" id="start_date" name="start_date" placeholder="Select start date" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-5 mb-3 mb-md-0">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                        <input type="text" class="form-control date-picker" id="end_date" name="end_date" placeholder="Select end date" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="quickDateDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Quick Select
+                                        </button>
+                                        <ul class="dropdown-menu w-100" aria-labelledby="quickDateDropdown">
+                                            <li><a class="dropdown-item" href="#" data-range="thisMonth">This Month</a></li>
+                                            <li><a class="dropdown-item" href="#" data-range="lastMonth">Last Month</a></li>
+                                            <li><a class="dropdown-item" href="#" data-range="thisQuarter">This Quarter</a></li>
+                                            <li><a class="dropdown-item" href="#" data-range="lastQuarter">Last Quarter</a></li>
+                                            <li><a class="dropdown-item" href="#" data-range="thisYear">This Year</a></li>
+                                            <li><a class="dropdown-item" href="#" data-range="lastYear">Last Year</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <div class="date-range-error" id="dateRangeError">End date must be after start date.</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Options -->
+                            <h5 class="mb-3">3. Report Options</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="report_format" class="form-label">Report Format</label>
+                                        <select class="form-select" id="report_format" name="report_format">
+                                            <option value="pdf">PDF Document</option>
+                                            <option value="excel">Excel Spreadsheet</option>
+                                            <option value="csv">CSV File</option>
+                                            <option value="web">Web View</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="include_charts" class="form-label">Include Visualizations</label>
+                                        <select class="form-select" id="include_charts" name="include_charts">
+                                            <option value="yes">Yes, include charts and graphs</option>
+                                            <option value="no">No, data tables only</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Additional Data to Include</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="staff_details" id="include_staff" name="include_staff" checked>
+                                            <label class="form-check-label" for="include_staff">
+                                                Staff Assignment Details
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="location_data" id="include_location" name="include_location" checked>
+                                            <label class="form-check-label" for="include_location">
+                                                Location Distribution
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="priority_analysis" id="include_priority" name="include_priority" checked>
+                                            <label class="form-check-label" for="include_priority">
+                                                Priority Level Analysis
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="response_times" id="include_response" name="include_response" checked>
+                                            <label class="form-check-label" for="include_response">
+                                                Response Time Metrics
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Report Preview -->
+                            <h5 class="mb-3">4. Report Preview</h5>
+                            <div class="report-preview mb-4">
+                                <div class="text-center pb-3 border-bottom mb-3">
+                                    <h5>SAMPLE PREVIEW</h5>
+                                    <h4 class="mb-0">Maintenance Performance Report</h4>
+                                    <p id="previewDateRange" class="text-muted">January 1, 2025 - March 10, 2025</p>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <div class="sample-chart">
+                                            <span>[Performance Chart]</span>
+                                        </div>
+                                        <h6>Summary Statistics</h6>
+                                        <table class="table table-sm table-bordered">
+                                            <tr>
+                                                <td>Total Requests</td>
+                                                <td class="text-end">138</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Completed Requests</td>
+                                                <td class="text-end">112</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Average Resolution Time</td>
+                                                <td class="text-end">3.2 days</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Satisfaction Rate</td>
+                                                <td class="text-end">92%</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="sample-chart">
+                                            <span>[Category Distribution]</span>
+                                        </div>
+                                        <h6>Top Request Categories</h6>
+                                        <table class="table table-sm table-bordered">
+                                            <tr>
+                                                <td>Electrical</td>
+                                                <td class="text-end">42 (30.4%)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Plumbing</td>
+                                                <td class="text-end">26 (18.8%)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>HVAC</td>
+                                                <td class="text-end">22 (15.9%)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Other Categories</td>
+                                                <td class="text-end">48 (34.9%)</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Generate Button -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="submit" class="btn btn-primary btn-generate" id="generateReportBtn">
+                                    <i class="fas fa-file-alt me-2"></i> Generate Report
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="card">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i> Recently Generated Reports</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Report Name</th>
+                                        <th>Date Range</th>
+                                        <th>Generated On</th>
+                                        <th>Generated By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- These would be dynamically generated in a real app -->
+                                    <tr>
+                                        <td>Monthly Performance Report</td>
+                                        <td>Feb 1, 2025 - Feb 29, 2025</td>
+                                        <td>Mar 2, 2025</td>
+                                        <td>Admin User</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Quarterly Category Analysis</td>
+                                        <td>Jan 1, 2025 - Mar 31, 2025</td>
+                                        <td>Feb 15, 2025</td>
+                                        <td>Admin User</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Staff Workload Analysis</td>
+                                        <td>Jan 1, 2025 - Jan 31, 2025</td>
+                                        <td>Feb 5, 2025</td>
+                                        <td>Admin User</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
+                                            <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <!-- Custom JavaScript for report functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize date pickers
+            const datePickerOptions = {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "F j, Y",
+                maxDate: "today"
+            };
+            
+            flatpickr("#start_date", datePickerOptions);
+            flatpickr("#end_date", datePickerOptions);
+            
+            // Report type selection
+            const reportTypeCards = document.querySelectorAll('.report-type-card');
+            const reportTypeInput = document.getElementById('reportType');
+            
+            reportTypeCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove selected class from all cards
+                    reportTypeCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Add selected class to clicked card
+                    this.classList.add('selected');
+                    
+                    // Update hidden input
+                    reportTypeInput.value = this.dataset.reportType;
+                    
+                    // Update preview title based on selection
+                    const previewTitle = document.querySelector('.report-preview h4');
+                    if (this.dataset.reportType === 'performance') {
+                        previewTitle.textContent = 'Maintenance Performance Report';
+                    } else if (this.dataset.reportType === 'category') {
+                        previewTitle.textContent = 'Maintenance Category Analysis';
+                    } else if (this.dataset.reportType === 'staff') {
+                        previewTitle.textContent = 'Staff Workload Analysis';
+                    }
+                });
+            });
+            
+            // Quick date range selection
+            const quickDateLinks = document.querySelectorAll('[data-range]');
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+            const previewDateRange = document.getElementById('previewDateRange');
+            
+            quickDateLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const today = new Date();
+                    let startDate, endDate;
+                    
+                    switch(this.dataset.range) {
+                        case 'thisMonth':
+                            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                            endDate = today;
+                            break;
+                        case 'lastMonth':
+                            startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                            endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                            break;
+                        case 'thisQuarter':
+                            const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
+                            startDate = new Date(today.getFullYear(), quarterStartMonth, 1);
+                            endDate = today;
+                            break;
+                        case 'lastQuarter':
+                            const lastQuarterStartMonth = Math.floor((today.getMonth() - 3) / 3) * 3;
+                            startDate = new Date(today.getFullYear(), lastQuarterStartMonth, 1);
+                            endDate = new Date(today.getFullYear(), lastQuarterStartMonth + 3, 0);
+                            break;
+                        case 'thisYear':
+                            startDate = new Date(today.getFullYear(), 0, 1);
+                            endDate = today;
+                            break;
+                        case 'lastYear':
+                            startDate = new Date(today.getFullYear() - 1, 0, 1);
+                            endDate = new Date(today.getFullYear() - 1, 11, 31);
+                            break;
+                    }
+                    
+                    // Update date inputs (both flatpickr instance and underlying input)
+                    const startFp = document.querySelector('#start_date')._flatpickr;
+                    const endFp = document.querySelector('#end_date')._flatpickr;
+                    
+                    startFp.setDate(startDate);
+                    endFp.setDate(endDate);
+                    
+                    // Update preview text
+                    updatePreviewDateRange();
+                });
+            });
+            
+            // Update preview date range when dates change
+            startDateInput.addEventListener('change', updatePreviewDateRange);
+            endDateInput.addEventListener('change', updatePreviewDateRange);
+            
+            function updatePreviewDateRange() {
+                if (startDateInput._flatpickr.selectedDates[0] && endDateInput._flatpickr.selectedDates[0]) {
+                    const startDate = startDateInput._flatpickr.selectedDates[0];
+                    const endDate = endDateInput._flatpickr.selectedDates[0];
+                    
+                    const formattedStart = startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    const formattedEnd = endDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    
+                    previewDateRange.textContent = `${formattedStart} - ${formattedEnd}`;
+                }
+            }
+            
+            // Form validation
+            const reportForm = document.getElementById('reportForm');
+            const dateRangeError = document.getElementById('dateRangeError');
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            
+            reportForm.addEventListener('submit', function(e) {
+                if (!validateDateRange()) {
+                    e.preventDefault();
+                }
+            });
+            
+            function validateDateRange() {
+                if (startDateInput._flatpickr.selectedDates[0] && endDateInput._flatpickr.selectedDates[0]) {
+                    const startDate = startDateInput._flatpickr.selectedDates[0];
+                    const endDate = endDateInput._flatpickr.selectedDates[0];
+                    
+                    if (startDate > endDate) {
+                        dateRangeError.style.display = 'block';
+                        return false;
+                    } else {
+                        dateRangeError.style.display = 'none';
+                        return true;
+                    }
+                }
+                return true;
+            }
+        });
+    </script>
+</body>
+</html>

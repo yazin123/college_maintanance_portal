@@ -1,37 +1,391 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<h1>Maintenance Request Pool</h1>
+{% block title %}My Assigned Requests - College Maintenance Portal{% endblock %}
 
-{% if unassigned_requests %}
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Building</th>
-                <th>Priority</th>
-                <th>Created</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for req in unassigned_requests %}
-            <tr>
-                <td>{{ req.title }}</td>
-                <td>{{ req.category.name }}</td>
-                <td>{{ req.building.name }}</td>
-                <td>{{ req.get_priority_display }}</td>
-                <td>{{ req.created_at|date:"M d, Y" }}</td>
-                <td>
-                    <a href="{% url 'view_maintenance_request' req.id %}">View</a>
-                    <a href="{% url 'assign_request' req.id %}">Assign to Me</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>No unassigned requests available at the moment.</p>
-{% endif %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">My Assigned Requests</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>My Assigned Maintenance Requests</h4>
+                        <span class="badge bg-light text-dark">{{ assigned_requests|length }} Assigned Requests</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Status Filter Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="statusTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-requests" 
+                                type="button" role="tab" aria-controls="all-requests" aria-selected="true">
+                                All Requests <span class="badge bg-secondary ms-1">{{ assigned_requests|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-requests" 
+                                type="button" role="tab" aria-controls="pending-requests" aria-selected="false">
+                                Pending <span class="badge bg-warning text-dark ms-1">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="in-progress-tab" data-bs-toggle="tab" data-bs-target="#in-progress-requests" 
+                                type="button" role="tab" aria-controls="in-progress-requests" aria-selected="false">
+                                In Progress <span class="badge bg-primary ms-1">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-requests" 
+                                type="button" role="tab" aria-controls="completed-requests" aria-selected="false">
+                                Completed <span class="badge bg-success ms-1">0</span>
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Search Bar -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 offset-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search my requests..." id="searchInput">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="statusTabContent">
+                        <!-- All Requests Tab -->
+                        <div class="tab-pane fade show active" id="all-requests" role="tabpanel" aria-labelledby="all-tab">
+                            {% if assigned_requests %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="assignedRequestsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Title</th>
+                                                <th>Requester</th>
+                                                <th>Location</th>
+                                                <th>Category</th>
+                                                <th>Created</th>
+                                                <th>Priority</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for request in assigned_requests %}
+                                                <tr class="priority-{{ request.priority }} status-row" data-status="{{ request.status }}">
+                                                    <td>#{{ request.id }}</td>
+                                                    <td>{{ request.title }}</td>
+                                                    <td>{{ request.requester.username }}</td>
+                                                    <td>{{ request.building.name }} {{ request.room_number }}</td>
+                                                    <td>{{ request.category.name }}</td>
+                                                    <td>{{ request.created_at|date:"M d, Y" }}</td>
+                                                    <td>
+                                                        <span class="badge bg-{% if request.priority == 'low' %}secondary{% elif request.priority == 'medium' %}primary{% elif request.priority == 'high' %}warning{% else %}danger{% endif %} rounded-pill">
+                                                            {{ request.get_priority_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge status-{{ request.status }} rounded-pill">
+                                                            {{ request.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <a href="{% url 'view_maintenance_request' request.id %}" class="btn btn-outline-primary" title="View Details">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="{% url 'update_maintenance_request' request.id %}" class="btn btn-outline-success" title="Update Status">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Pagination -->
+                                {% if assigned_requests.has_other_pages %}
+                                    <nav aria-label="Page navigation" class="mt-4">
+                                        <ul class="pagination justify-content-center">
+                                            {% if assigned_requests.has_previous %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ assigned_requests.previous_page_number }}" aria-label="Previous">
+                                                        <span aria-hidden="true">&laquo;</span>
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <a class="page-link" href="#" aria-label="Previous">
+                                                        <span aria-hidden="true">&laquo;</span>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                            
+                                            {% for i in assigned_requests.paginator.page_range %}
+                                                {% if assigned_requests.number == i %}
+                                                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                                {% else %}
+                                                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                                                {% endif %}
+                                            {% endfor %}
+                                            
+                                            {% if assigned_requests.has_next %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ assigned_requests.next_page_number }}" aria-label="Next">
+                                                        <span aria-hidden="true">&raquo;</span>
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <a class="page-link" href="#" aria-label="Next">
+                                                        <span aria-hidden="true">&raquo;</span>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </nav>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-clipboard-check fa-4x text-muted mb-3"></i>
+                                    <h5>No assigned requests</h5>
+                                    <p class="text-muted">You don't have any maintenance requests assigned to you.</p>
+                                    <a href="{% url 'staff_request_pool' %}" class="btn btn-primary mt-2">
+                                        <i class="fas fa-inbox me-2"></i>View Request Pool
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Pending Requests Tab -->
+                        <div class="tab-pane fade" id="pending-requests" role="tabpanel" aria-labelledby="pending-tab">
+                            <div id="pending-placeholder">
+                                <!-- This will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- In Progress Requests Tab -->
+                        <div class="tab-pane fade" id="in-progress-requests" role="tabpanel" aria-labelledby="in-progress-tab">
+                            <div id="in-progress-placeholder">
+                                <!-- This will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Completed Requests Tab -->
+                        <div class="tab-pane fade" id="completed-requests" role="tabpanel" aria-labelledby="completed-tab">
+                            <div id="completed-placeholder">
+                                <!-- This will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Task Management Tips -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-light py-3">
+                            <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Task Management</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-clock fa-2x text-warning me-3"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Pending Requests</h5>
+                                            <p class="mb-0">Try to start work on pending requests within 24 hours. If you can't address it soon, update the requester.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-tools fa-2x text-primary me-3"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">In Progress Requests</h5>
+                                            <p class="mb-0">Update the status regularly, especially for tasks that span multiple days. Keep the requester informed.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Completed Requests</h5>
+                                            <p class="mb-0">When marking as complete, provide details about the work performed and any follow-up needed.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-light py-3">
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Upcoming Maintenance</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <h6 class="mb-0">Building B - HVAC System Maintenance</h6>
+                                </div>
+                                <p class="small mb-0">Scheduled for this weekend. Plan your work accordingly.</p>
+                                <small class="text-muted">March 15-16, 2025</small>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <h6 class="mb-0">Inventory Restocking</h6>
+                                </div>
+                                <p class="small mb-0">New supplies arriving next Tuesday. Submit any special orders by Friday.</p>
+                                <small class="text-muted">March 18, 2025</small>
+                            </div>
+                            
+                            <div class="alert alert-success">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    <h6 class="mb-0">Staff Training Session</h6>
+                                </div>
+                                <p class="small mb-0">Mandatory safety training for all maintenance staff.</p>
+                                <small class="text-muted">March 25, 2025 • 9:00 AM - 12:00 PM</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to filter table rows based on search input
+        const searchInput = document.getElementById('searchInput');
+        const assignedTable = document.getElementById('assignedRequestsTable');
+        
+        if (searchInput && assignedTable) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = assignedTable.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // Function to populate status tabs with filtered content
+        function populateStatusTabs() {
+            const allRows = document.querySelectorAll('#assignedRequestsTable tbody tr');
+            if (!allRows.length) return;
+            
+            const pendingRows = [];
+            const inProgressRows = [];
+            const completedRows = [];
+            
+            // Count requests by status
+            let pendingCount = 0;
+            let inProgressCount = 0;
+            let completedCount = 0;
+            
+            allRows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                const clone = row.cloneNode(true);
+                
+                if (status === 'pending') {
+                    pendingRows.push(clone.outerHTML);
+                    pendingCount++;
+                } else if (status === 'in_progress') {
+                    inProgressRows.push(clone.outerHTML);
+                    inProgressCount++;
+                } else if (status === 'completed') {
+                    completedRows.push(clone.outerHTML);
+                    completedCount++;
+                }
+            });
+            
+            // Update tab badges
+            document.querySelector('#pending-tab .badge').textContent = pendingCount;
+            document.querySelector('#in-progress-tab .badge').textContent = inProgressCount;
+            document.querySelector('#completed-tab .badge').textContent = completedCount;
+            
+            // Create tables for each status
+            function createStatusTable(rows, placeholder, status) {
+                const placeholder_elem = document.getElementById(placeholder);
+                
+                if (rows.length) {
+                    let tableHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Requester</th>
+                                        <th>Location</th>
+                                        <th>Category</th>
+                                        <th>Created</th>
+                                        <th>Priority</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rows.join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    placeholder_elem.innerHTML = tableHTML;
+                } else {
+                    let emptyHTML = `
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard fa-4x text-muted mb-3"></i>
+                            <h5>No ${status} requests</h5>
+                            <p class="text-muted">You don't have any ${status} maintenance requests.</p>
+                        </div>
+                    `;
+                    placeholder_elem.innerHTML = emptyHTML;
+                }
+            }
+            
+            createStatusTable(pendingRows, 'pending-placeholder', 'pending');
+            createStatusTable(inProgressRows, 'in-progress-placeholder', 'in progress');
+            createStatusTable(completedRows, 'completed-placeholder', 'completed');
+        }
+        
+        // Call the function to populate tabs on page load
+        populateStatusTabs();
+    });
+</script>
 {% endblock %}

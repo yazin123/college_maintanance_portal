@@ -1,79 +1,353 @@
 {% extends 'base.html' %}
-{% load custom_template_tags %}
+
+{% block title %}Admin Dashboard - College Maintenance Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+    .stat-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Admin Dashboard</h1>
-
-<div class="dashboard-sections">
-    <section class="request-overview">
-        <h2>Maintenance Request Overview</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Status</th>
-                    <th>Number of Requests</th>
-                    <th>Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stat in request_stats %}
-                <tr>
-                    <td>{{ stat.status|title }}</td>
-                    <td>{{ stat.count }}</td>
-                    <td>{{ stat.count|multiply:100.0|divide:total_requests.count|floatformat:2 }}%</td>
-                </tr>
-                {% endfor %}
-                <tr>
-                    <td><strong>Total Requests</strong></td>
-                    <td><strong>{{ total_requests.count }}</strong></td>
-                    <td><strong>100%</strong></td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
-
-    <section class="recent-requests">
-        <h2>Recent Maintenance Requests</h2>
-        {% if recent_requests %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Requester</th>
-                        <th>Category</th>
-                        <th>Status</th>
-                        <th>Created Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for req in recent_requests %}
-                    <tr>
-                        <td>{{ req.title }}</td>
-                        <td>{{ req.requester.username }}</td>
-                        <td>{{ req.category.name }}</td>
-                        <td>{{ req.get_status_display }}</td>
-                        <td>{{ req.created_at|date:"M d, Y" }}</td>
-                        <td>
-                            <a href="{% url 'view_maintenance_request' req.id %}">View Details</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No recent maintenance requests.</p>
-        {% endif %}
-    </section>
-
-    <section class="admin-actions">
-        <h2>Administrative Actions</h2>
-        <div class="action-links">
-            <a href="{% url 'generate_report' %}">Generate Maintenance Report</a>
-            <a href="{% url 'admin:maintenance_customuser_changelist' %}">Manage Users</a>
-            <a href="{% url 'admin:maintenance_maintenancecategory_changelist' %}">Manage Categories</a>
-            <a href="{% url 'admin:maintenance_building_changelist' %}">Manage Buildings</a>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-chart-line text-primary me-2"></i>Admin Dashboard</h1>
+                <div>
+                    <a href="{% url 'generate_report' %}" class="btn btn-primary">
+                        <i class="fas fa-file-alt me-2"></i>Generate Report
+                    </a>
+                </div>
+            </div>
         </div>
-    </section>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-primary h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ metrics.total_users }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users stat-icon text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-success h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Buildings
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ metrics.total_buildings }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-building stat-icon text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-info h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Categories
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ metrics.total_categories }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-list stat-icon text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-warning h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Requests
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_requests|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-ticket-alt stat-icon text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Request Status Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Maintenance Request Overview</h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown">
+                            Last 30 Days
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
+                            <li><a class="dropdown-item" href="#">Last 7 Days</a></li>
+                            <li><a class="dropdown-item active" href="#">Last 30 Days</a></li>
+                            <li><a class="dropdown-item" href="#">Last 90 Days</a></li>
+                            <li><a class="dropdown-item" href="#">All Time</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="requestsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h6 class="m-0 font-weight-bold">Request Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        {% for stat in request_stats %}
+                            <span class="me-2">
+                                <i class="fas fa-circle 
+                                   {% if stat.status == 'pending' %}text-warning
+                                   {% elif stat.status == 'in_progress' %}text-primary
+                                   {% elif stat.status == 'completed' %}text-success
+                                   {% else %}text-secondary
+                                   {% endif %}"></i>
+                                {{ stat.status|capfirst }} ({{ stat.count }})
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Requests Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Recent Maintenance Requests</h6>
+                    <button class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Requester</th>
+                                    <th>Category</th>
+                                    <th>Location</th>
+                                    <th>Created</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Assigned To</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in recent_requests %}
+                                    <tr class="priority-{{ request.priority }}">
+                                        <td>#{{ request.id }}</td>
+                                        <td>{{ request.title }}</td>
+                                        <td>{{ request.requester.username }}</td>
+                                        <td>{{ request.category.name }}</td>
+                                        <td>{{ request.building.name }} {{ request.room_number }}</td>
+                                        <td>{{ request.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if request.priority == 'low' %}secondary{% elif request.priority == 'medium' %}primary{% elif request.priority == 'high' %}warning{% else %}danger{% endif %} rounded-pill">
+                                                {{ request.get_priority_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge status-{{ request.status }} rounded-pill">
+                                                {{ request.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if request.assigned_to %}
+                                                {{ request.assigned_to.username }}
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">Unassigned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'view_maintenance_request' request.id %}" class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'update_maintenance_request' request.id %}" class="btn btn-outline-success">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center m-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prepare data for the charts
+        const requestStatusData = {
+            labels: [
+                {% for stat in request_stats %}
+                    '{{ stat.status|capfirst }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for stat in request_stats %}
+                        {{ stat.count }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#ffc107', // Pending - warning
+                    '#0d6efd', // In Progress - primary
+                    '#198754', // Completed - success
+                    '#dc3545'  // Cancelled - danger
+                ],
+                hoverOffset: 4
+            }]
+        };
+        
+        // Line chart data for requests over time
+        const requestsOverTimeData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [{
+                label: 'New Requests',
+                data: [65, 59, 80, 81, 56, 55, 40],
+                fill: false,
+                borderColor: '#0d6efd',
+                tension: 0.1
+            }, {
+                label: 'Completed',
+                data: [28, 48, 40, 19, 86, 27, 90],
+                fill: false,
+                borderColor: '#198754',
+                tension: 0.1
+            }]
+        };
+        
+        // Status Pie Chart
+        const statusChart = new Chart(
+            document.getElementById('statusChart'),
+            {
+                type: 'doughnut',
+                data: requestStatusData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            }
+        );
+        
+        // Requests Line Chart
+        const requestsChart = new Chart(
+            document.getElementById('requestsChart'),
+            {
+                type: 'line',
+                data: requestsOverTimeData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false,
+                            text: 'Request Trends'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        );
+    });
+</script>
+
+{% endblock extra_js %}

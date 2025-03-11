@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Deactivate User - College Maintenance Portal{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-times me-2"></i>Deactivate User</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> You are about to deactivate the user "{{ user.username }}".
+                    </div>
+                    
+                    <p>Deactivated users will no longer be able to log in to the system.</p>
+                    
+                    <div class="mb-3">
+                        <strong>Username:</strong> {{ user.username }}<br>
+                        <strong>Name:</strong> {{ user.get_full_name|default:'-' }}<br>
+                        <strong>User Type:</strong> {{ user.get_user_type_display }}<br>
+                        <strong>Email:</strong> {{ user.email|default:'-' }}
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-user-times me-2"></i>Deactivate User
+                            </button>
+                            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
