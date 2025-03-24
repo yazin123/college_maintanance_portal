@@ -167,7 +167,11 @@
                                 <input type="tel" name="{{ form.contact_number.name }}" 
                                        id="{{ form.contact_number.id_for_label }}" 
                                        class="form-control {% if form.contact_number.errors %}is-invalid{% endif %}"
-                                       placeholder="Enter contact number (optional)">
+                                       placeholder="Enter 10-digit contact number (optional)"
+                                       pattern="[0-9]{10}"
+                                       title="Please enter a valid 10-digit phone number"
+                                       minlength="10"
+                                       maxlength="10">
                                 {% if form.contact_number.errors %}
                                     <div class="invalid-feedback">
                                         {% for error in form.contact_number.errors %}
@@ -176,6 +180,7 @@
                                     </div>
                                 {% endif %}
                             </div>
+                            <small class="form-text text-muted">Enter a 10-digit phone number without spaces or special characters.</small>
                         </div>
                         
                         <div class="d-grid gap-2">
