@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.core.validators import RegexValidator
 from .models import (
     CustomUser, 
     MaintenanceRequest, 
@@ -8,10 +9,25 @@ from .models import (
     MaintenanceLog,
     Building,InventoryItem
 )
+
+# Phone number validator
+phone_validator = RegexValidator(
+    regex=r'^\d{10}$',
+    message='Phone number must be exactly 10 digits',
+    code='invalid_phone'
+)
+
 class UserRegistrationForm(UserCreationForm):
     """
     Extended user registration form with additional fields
     """
+    # Add phone validation to contact_number
+    contact_number = forms.CharField(
+        required=False,
+        validators=[phone_validator],
+        widget=forms.TextInput(attrs={'placeholder': 'Enter 10-digit phone number'})
+    )
+    
     class Meta:
         model = CustomUser
         fields = [
@@ -26,6 +42,7 @@ class UserRegistrationForm(UserCreationForm):
         widgets = {
             'user_type': forms.Select(attrs={'class': 'form-control'}),
         }
+
 class MaintenanceRequestForm(forms.ModelForm):
     """
     Form for creating maintenance requests with enhanced validation
@@ -93,12 +110,7 @@ class InventoryItemForm(forms.ModelForm):
         }
 
 
-# Add these to your forms.py file
-
-from django import forms
-from django.contrib.auth.forms import UserCreationForm as DjangoUserCreationForm
-from django.contrib.auth.forms import PasswordResetForm
-from .models import CustomUser
+# Updated forms below
 
 class UserCreationForm(forms.ModelForm):
     """
@@ -106,6 +118,13 @@ class UserCreationForm(forms.ModelForm):
     """
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput)
+    
+    # Add phone validation to contact_number
+    contact_number = forms.CharField(
+        required=False,
+        validators=[phone_validator],
+        widget=forms.TextInput(attrs={'placeholder': 'Enter 10-digit phone number'})
+    )
     
     class Meta:
         model = CustomUser
@@ -132,6 +151,13 @@ class UserEditForm(forms.ModelForm):
     """
     Form for admin to edit an existing user
     """
+    # Add phone validation to contact_number
+    contact_number = forms.CharField(
+        required=False,
+        validators=[phone_validator],
+        widget=forms.TextInput(attrs={'placeholder': 'Enter 10-digit phone number'})
+    )
+    
     class Meta:
         model = CustomUser
         fields = ['username', 'email', 'user_type', 'department', 'contact_number', 'is_active']
